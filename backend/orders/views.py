@@ -47,10 +47,10 @@ class OrderViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if getattr(user, 'role', '') == 'ADMIN' or user.is_staff:
-            return Order.objects.all()
+            return Order.objects.all().order_by('-created_at')
         if user.role == 'SELLER':
-            return Order.objects.filter(items__product__seller=user).distinct()
-        return Order.objects.filter(buyer=user)
+            return Order.objects.filter(items__product__seller=user).distinct().order_by('-created_at')
+        return Order.objects.filter(buyer=user).order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
         cart = Cart.objects.get(user=request.user)

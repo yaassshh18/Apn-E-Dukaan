@@ -29,7 +29,7 @@ class ProductViewSet(viewsets.ModelViewSet):
         if location:
             queryset = queryset.filter(seller__location__icontains=location)
             
-        return queryset
+        return queryset.order_by('-created_at')
         
     def destroy(self, request, *args, **kwargs):
         product = self.get_object()
