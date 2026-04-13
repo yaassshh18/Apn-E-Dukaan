@@ -1,10 +1,11 @@
-import { useContext } from 'react';
+import { useState, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { ShoppingBag, ShoppingCart, User, LogOut, MessageSquare } from 'lucide-react';
+import { ShoppingBag, ShoppingCart, User, LogOut, MessageSquare, Menu, X } from 'lucide-react';
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     return (
         <nav className="fixed w-full z-50 glass-card rounded-none border-t-0 border-r-0 border-l-0 top-0 left-0 px-6 py-4 flex justify-between items-center transition-all duration-300">
@@ -16,33 +17,41 @@ const Navbar = () => {
                     Apn-E-Dukaan
                 </span>
             </Link>
-            
-            <div className="flex items-center gap-6">
-                {user ? (
-                    <>
-                        <Link to={user.role === 'SELLER' ? "/seller-dashboard" : user.role === 'ADMIN' ? "/admin-dashboard" : "/buyer-dashboard"} className="text-gray-600 hover:text-primary transition-colors flex items-center gap-2 font-medium">
-                            <User className="w-5 h-5" /> Dashboard
-                        </Link>
-                        <Link to="/chat" className="text-gray-600 hover:text-primary transition-colors flex items-center gap-2 font-medium">
-                            <MessageSquare className="w-5 h-5" /> Chat
-                        </Link>
-                        {user.role === 'BUYER' && (
-                            <Link to="/cart" className="text-gray-600 hover:text-primary transition-colors flex items-center gap-2 font-medium relative">
-                                <ShoppingCart className="w-5 h-5" />
-                                <span className="absolute -top-2 -right-2 bg-accent text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">0</span>
-                            </Link>
-                        )}
-                        <button onClick={logout} className="text-gray-600 hover:text-red-500 transition-colors flex items-center gap-2 font-medium">
-                            <LogOut className="w-5 h-5" /> Logout
-                        </button>
-                    </>
-                ) : (
-                    <>
-                        <Link to="/login" className="text-gray-600 hover:text-primary font-medium transition-colors">Login</Link>
-                        <Link to="/register" className="btn-primary">Sign Up</Link>
-                    </>
-                )}
             </div>
+
+            {/* Mobile Menu Toggle */}
+            <button className="md:hidden text-gray-800" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+                 {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+
+            {/* Mobile Drawer */}
+            {isMobileMenuOpen && (
+                <div className="absolute top-full left-0 w-full glass-card border-t bg-white/95 flex flex-col p-4 gap-4 md:hidden animate-fade-in-down shadow-xl z-50">
+                     {user ? (
+                        <>
+                            <Link onClick={() => setIsMobileMenuOpen(false)} to={user.role === 'SELLER' ? "/seller-dashboard" : user.role === 'ADMIN' ? "/admin-dashboard" : "/buyer-dashboard"} className="text-gray-800 hover:text-primary transition-colors flex items-center gap-2 font-medium p-2 bg-gray-50 rounded-lg">
+                                <User className="w-6 h-6" /> Dashboard
+                            </Link>
+                            <Link onClick={() => setIsMobileMenuOpen(false)} to="/chat" className="text-gray-800 hover:text-primary transition-colors flex items-center gap-2 font-medium p-2 bg-gray-50 rounded-lg">
+                                <MessageSquare className="w-6 h-6" /> Chat
+                            </Link>
+                            {user.role === 'BUYER' && (
+                                <Link onClick={() => setIsMobileMenuOpen(false)} to="/cart" className="text-gray-800 hover:text-primary transition-colors flex items-center gap-2 font-medium p-2 bg-gray-50 rounded-lg">
+                                    <ShoppingCart className="w-6 h-6" /> View Cart
+                                </Link>
+                            )}
+                            <button onClick={() => { setIsMobileMenuOpen(false); logout(); }} className="text-red-500 hover:bg-red-50 transition-colors flex items-center gap-2 font-medium p-2 rounded-lg text-left">
+                                <LogOut className="w-6 h-6" /> Logout
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link onClick={() => setIsMobileMenuOpen(false)} to="/login" className="text-gray-800 hover:text-primary font-medium transition-colors p-2 text-center bg-gray-50 rounded-lg">Login</Link>
+                            <Link onClick={() => setIsMobileMenuOpen(false)} to="/register" className="btn-primary text-center">Sign Up</Link>
+                        </>
+                    )}
+                </div>
+            )}
         </nav>
     );
 };
