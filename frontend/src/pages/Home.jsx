@@ -14,7 +14,12 @@ const Home = () => {
     const fetchProducts = async () => {
         try {
             const res = await api.get(`products/?search=${search}`);
-            setProducts(res.data);
+            // DRF Pagination returns the array inside "results"
+            if (res.data && res.data.results) {
+                setProducts(res.data.results);
+            } else {
+                setProducts(res.data);
+            }
         } catch (error) {
             console.error(error);
         }

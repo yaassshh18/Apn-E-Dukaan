@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { ShoppingBag, ShoppingCart, User, LogOut } from 'lucide-react';
+import { ShoppingBag, ShoppingCart, User, LogOut, MessageSquare } from 'lucide-react';
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
@@ -22,6 +22,9 @@ const Navbar = () => {
                     <>
                         <Link to={user.role === 'SELLER' ? "/seller-dashboard" : "/buyer-dashboard"} className="text-gray-600 hover:text-primary transition-colors flex items-center gap-2 font-medium">
                             <User className="w-5 h-5" /> Dashboard
+                        </Link>
+                        <Link to="/chat" className="text-gray-600 hover:text-primary transition-colors flex items-center gap-2 font-medium">
+                            <MessageSquare className="w-5 h-5" /> Chat
                         </Link>
                         {user.role === 'BUYER' && (
                             <Link to="/cart" className="text-gray-600 hover:text-primary transition-colors flex items-center gap-2 font-medium relative">

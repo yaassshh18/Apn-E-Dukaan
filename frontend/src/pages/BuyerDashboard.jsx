@@ -12,7 +12,7 @@ const BuyerDashboard = () => {
     const fetchOrders = async () => {
         try {
             const res = await api.get('orders/');
-            setOrders(res.data);
+            setOrders(res.data.results || res.data);
         } catch (error) {
             toast.error("Failed to load your orders");
         }

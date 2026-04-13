@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
-import { Package, TrendingUp, DollarSign, Plus } from 'lucide-react';
+import { Package, TrendingUp, DollarSign, Plus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const SellerDashboard = () => {
     const [products, setProducts] = useState([]);
     const [orders, setOrders] = useState([]);
+    const [isAddingProduct, setIsAddingProduct] = useState(false);
+    
+    // Form state
+    const [title, setTitle] = useState('');
+    const [description, setDescription] = useState('');
+    const [price, setPrice] = useState('');
+    const [image, setImage] = useState(null);
 
     useEffect(() => {
         fetchData();
@@ -14,13 +21,34 @@ const SellerDashboard = () => {
     const fetchData = async () => {
         try {
             const prodRes = await api.get('products/');
-            setProducts(prodRes.data); // in a real app, query by seller is needed, but backend performs basic filtering. Wait, ProductViewSet needs a change for seller filtering if we only want their products. Let's assume the API provides it or we filter client side.
+            setProducts(prodRes.data.results || prodRes.data);
             
             const orderRes = await api.get('orders/');
-            setOrders(orderRes.data);
+            setOrders(orderRes.data.results || orderRes.data);
         } catch (error) {
             console.error(error);
             toast.error("Failed to load dashboard data");
+        }
+    };
+
+    const handleAddProduct = async (e) => {
+        e.preventDefault();
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('description', description);
+        formData.append('price', price);
+        if (image) formData.append('image', image);
+
+        try {
+            await api.post('products/', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            toast.success("Product added successfully!");
+            setIsAddingProduct(false);
+            setTitle(''); setDescription(''); setPrice(''); setImage(null);
+            fetchData();
+        } catch (err) {
+            toast.error("Failed to add product");
         }
     };
 
@@ -28,10 +56,44 @@ const SellerDashboard = () => {
         <div className="container mx-auto px-6 py-12 max-w-7xl">
             <div className="flex justify-between items-center mb-10">
                 <h1 className="text-3xl font-extrabold text-gray-900">Seller Dashboard</h1>
-                <button className="btn-primary flex items-center gap-2">
-                    <Plus className="w-5 h-5"/> Add Product
+                <button 
+                    onClick={() => setIsAddingProduct(!isAddingProduct)} 
+                    className={`btn-primary flex items-center gap-2 ${isAddingProduct ? 'bg-red-500 hover:bg-red-600 from-red-500 to-red-600' : ''}`}
+                >
+                    {isAddingProduct ? <X className="w-5 h-5"/> : <Plus className="w-5 h-5"/>} 
+                    {isAddingProduct ? 'Cancel' : 'Add Product'}
                 </button>
             </div>
+
+            {/* Add Product Modal/Dropdown */}
+            {isAddingProduct && (
+                <div className="glass-card p-8 mb-12 border-l-4 border-l-primary">
+                    <h2 className="text-2xl font-bold mb-6">List a New Product</h2>
+                    <form onSubmit={handleAddProduct} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                <input type="text" className="input-field" required value={title} onChange={(e) => setTitle(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+                                <input type="number" step="0.01" className="input-field" required value={price} onChange={(e) => setPrice(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
+                                <input type="file" className="input-field py-1" accept="image/*" onChange={(e) => setImage(e.target.files[0])} />
+                            </div>
+                        </div>
+                        <div className="space-y-4 flex flex-col">
+                            <div className="flex-grow">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                                <textarea className="input-field h-32 resize-none" required value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
+                            </div>
+                            <button type="submit" className="btn-primary w-full py-3">Publish Product</button>
+                        </div>
+                    </form>
+                </div>
+            )}
 
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">

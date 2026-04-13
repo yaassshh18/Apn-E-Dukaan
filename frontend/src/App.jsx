@@ -11,9 +11,11 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import BuyerDashboard from './pages/BuyerDashboard';
 import SellerDashboard from './pages/SellerDashboard';
+import SellerDashboard from './pages/SellerDashboard';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
+import Chat from './pages/Chat';
 
 function App() {
   const { user, loading } = useContext(AuthContext);
@@ -32,6 +34,7 @@ function App() {
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={user ? <Cart /> : <Navigate to="/login" />} />
             <Route path="/checkout" element={user ? <Checkout /> : <Navigate to="/login" />} />
+            <Route path="/chat" element={user ? <Chat /> : <Navigate to="/login" />} />
             <Route path="/buyer-dashboard" element={user?.role === 'BUYER' ? <BuyerDashboard /> : <Navigate to="/" />} />
             <Route path="/seller-dashboard" element={user?.role === 'SELLER' ? <SellerDashboard /> : <Navigate to="/" />} />
           </Routes>

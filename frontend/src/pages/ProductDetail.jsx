@@ -2,7 +2,7 @@ import { useState, useEffect, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
-import { ShoppingCart, MessageCircle, Star } from 'lucide-react';
+import { ShoppingCart, MessageCircle, Star, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const ProductDetail = () => {
@@ -10,6 +10,8 @@ const ProductDetail = () => {
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
     const [product, setProduct] = useState(null);
+    const [reviewText, setReviewText] = useState('');
+    const [rating, setRating] = useState(5);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -37,10 +39,28 @@ const ProductDetail = () => {
 
     const handleChatClick = () => {
         if (!user) return navigate('/login');
-        toast.info("WhatsApp style Chat opening... (Component in progress)");
+        if (product.seller.id === user.id) return toast.error("You cannot chat with yourself!");
+        
+        navigate('/chat', { state: { receiver_id: product.seller.id, product_id: product.id } });
+    };
+
+    const handleReviewSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await api.post('reviews/', { product: product.id, rating, comment: reviewText });
+            toast.success("Review posted successfully!");
+            setReviewText('');
+            setRating(5);
+            // Refresh product to get new reviews
+            const res = await api.get(`products/${id}/`);
+            setProduct(res.data);
+        } catch (error) {
+            toast.error("Failed to submit review");
+        }
     };
 
     if (!product) return <div className="min-h-screen pt-32 text-center text-xl">Loading amazing local product...</div>;
+
 
     return (
         <div className="container mx-auto px-6 py-20 max-w-6xl">
@@ -88,6 +108,65 @@ const ProductDetail = () => {
                             <MessageCircle className="w-5 h-5" /> Negotiate
                         </button>
                     </div>
+                </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="mt-12">
+                <h2 className="text-2xl font-bold text-gray-800 mb-6">Customer Reviews</h2>
+                
+                {/* Submit Review */}
+                {user && user.role === 'BUYER' && (
+                    <div className="glass-card p-6 mb-8">
+                        <h3 className="font-bold text-gray-800 mb-4">Leave a Review</h3>
+                        <form onSubmit={handleReviewSubmit}>
+                            <div className="flex items-center gap-2 mb-4">
+                                <span className="text-sm font-medium text-gray-600">Rating:</span>
+                                {[1,2,3,4,5].map(star => (
+                                    <Star 
+                                        key={star} 
+                                        className={`w-6 h-6 cursor-pointer ${star <= rating ? 'fill-warning text-warning' : 'text-gray-300'}`}
+                                        onClick={() => setRating(star)}
+                                    />
+                                ))}
+                            </div>
+                            <textarea 
+                                className="input-field w-full mb-4" 
+                                rows="3" 
+                                placeholder="What did you think about this product?"
+                                value={reviewText}
+                                onChange={(e) => setReviewText(e.target.value)}
+                                required
+                            />
+                            <button type="submit" className="btn-primary">Submit Review</button>
+                        </form>
+                    </div>
+                )}
+
+                {/* Review List */}
+                <div className="space-y-4">
+                    {product.reviews && product.reviews.length > 0 ? (
+                        product.reviews.map(review => (
+                            <div key={review.id} className="glass-card p-6 flex gap-4">
+                                <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 shrink-0">
+                                    <User className="w-5 h-5"/>
+                                </div>
+                                <div>
+                                    <div className="flex items-center gap-2 mb-1">
+                                        <h4 className="font-bold text-gray-800">{review.user?.username || 'User'}</h4>
+                                        <div className="flex">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star key={i} className={`w-4 h-4 ${i < review.rating ? 'fill-warning text-warning' : 'text-gray-300'}`} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p className="text-gray-600">{review.comment}</p>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-gray-500 italic">No reviews yet. Be the first to share your experience!</p>
+                    )}
                 </div>
             </div>
         </div>
