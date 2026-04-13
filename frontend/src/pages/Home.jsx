@@ -7,18 +7,33 @@ import { AuthContext } from '../context/AuthContext';
 const Home = () => {
     const { user } = useContext(AuthContext);
     const [products, setProducts] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [search, setSearch] = useState('');
     const [nearMe, setNearMe] = useState(false);
+    const [selectedCategory, setSelectedCategory] = useState(null);
 
     useEffect(() => {
         fetchProducts();
-    }, [search, nearMe]);
+        fetchCategories();
+    }, [search, nearMe, selectedCategory]);
+
+    const fetchCategories = async () => {
+        try {
+            const res = await api.get('categories/');
+            setCategories(res.data.results || res.data);
+        } catch (error) {
+            console.error("Failed to load categories")
+        }
+    };
 
     const fetchProducts = async () => {
         try {
             let url = `products/?search=${search}`;
             if (nearMe && user && user.location) {
                 url += `&location=${user.location}`;
+            }
+            if (selectedCategory) {
+                url += `&category=${selectedCategory}`;
             }
             const res = await api.get(url);
             // DRF Pagination returns the array inside "results"
@@ -71,6 +86,27 @@ const Home = () => {
                     )}
                 </div>
             </section>
+
+            {/* Categories Strip */}
+            <div className="px-6 lg:px-20 py-4 border-b bg-white overflow-x-auto whitespace-nowrap">
+                <div className="max-w-7xl mx-auto flex gap-3">
+                    <button 
+                        onClick={() => setSelectedCategory(null)}
+                        className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${!selectedCategory ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                    >
+                        All
+                    </button>
+                    {categories.map(cat => (
+                        <button 
+                            key={cat.id} 
+                            onClick={() => setSelectedCategory(cat.slug)}
+                            className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${selectedCategory === cat.slug ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                        >
+                            {cat.name}
+                        </button>
+                    ))}
+                </div>
+            </div>
 
             {/* Products Grid */}
             <section className="px-6 lg:px-20 py-16 bg-gray-50/50">

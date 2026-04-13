@@ -6,12 +6,14 @@ import toast from 'react-hot-toast';
 const SellerDashboard = () => {
     const [products, setProducts] = useState([]);
     const [orders, setOrders] = useState([]);
+    const [categories, setCategories] = useState([]);
     const [isAddingProduct, setIsAddingProduct] = useState(false);
     
     // Form state
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [price, setPrice] = useState('');
+    const [categoryId, setCategoryId] = useState('');
     const [image, setImage] = useState(null);
 
     useEffect(() => {
@@ -25,6 +27,9 @@ const SellerDashboard = () => {
             
             const orderRes = await api.get('orders/');
             setOrders(orderRes.data.results || orderRes.data);
+            
+            const catRes = await api.get('categories/');
+            setCategories(catRes.data.results || catRes.data);
         } catch (error) {
             console.error(error);
             toast.error("Failed to load dashboard data");
@@ -37,6 +42,7 @@ const SellerDashboard = () => {
         formData.append('title', title);
         formData.append('description', description);
         formData.append('price', price);
+        if (categoryId) formData.append('category_id', categoryId);
         if (image) formData.append('image', image);
 
         try {
@@ -78,6 +84,15 @@ const SellerDashboard = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
                                 <input type="number" step="0.01" className="input-field" required value={price} onChange={(e) => setPrice(e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                <select className="input-field" required value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+                                    <option value="" disabled>Select a category</option>
+                                    {categories.map(cat => (
+                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                    ))}
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Image</label>
