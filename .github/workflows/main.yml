@@ -1,0 +1,69 @@
+name: Apn-E-Dukaan CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "master", "main" ]
+  pull_request:
+    branches: [ "master", "main" ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: apnedukaan
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+        
+    - name: Install Dependencies
+      working-directory: ./backend
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run Django Tests
+      working-directory: ./backend
+      env:
+        SECRET_KEY: 'test-secret-key-12345'
+        DEBUG: 'True'
+        DATABASE_URL: postgres://postgres:postgres@localhost:5432/apnedukaan
+      run: |
+        python manage.py test
+
+  frontend-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js 18.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        
+    - name: Install dependencies
+      working-directory: ./frontend
+      run: npm install
+      
+    - name: Build and lint
+      working-directory: ./frontend
+      run: |
+        npm run build
