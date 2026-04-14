@@ -34,16 +34,32 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const login = async (username, password) => {
-        const res = await api.post('auth/login/', { username, password });
+    // Step 1: Request 2FA OTP
+    const initiateLogin = async (email, password) => {
+        const res = await api.post('auth/login/', { email, password });
+        return res.data; // e.g. { message: "Credentials verified...", email: "..." }
+    };
+
+    // Step 2: Verify 2FA OTP and actually log in
+    const verifyLogin = async (email, otp_code) => {
+        const res = await api.post('auth/login/otp/verify/', { email, otp_code });
         localStorage.setItem('access_token', res.data.access);
         localStorage.setItem('refresh_token', res.data.refresh);
         await fetchProfile();
+        return res.data.user;
     };
 
     const register = async (userData) => {
         await api.post('auth/register/', userData);
-        await login(userData.username, userData.password);
+        // After registration, user must verify registration OTP.
+    };
+
+    const verifyRegistration = async (email, otp_code) => {
+        await api.post('auth/register/verify-otp/', { email, otp_code });
+    };
+
+    const resendOtp = async (email, action = 'login') => {
+        await api.post('auth/resend-otp/', { email, action });
     };
 
     const logout = () => {
@@ -53,7 +69,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+        <AuthContext.Provider value={{ user, initiateLogin, verifyLogin, register, verifyRegistration, resendOtp, logout, loading }}>
             {children}
         </AuthContext.Provider>
     );

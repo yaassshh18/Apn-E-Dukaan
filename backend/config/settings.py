@@ -19,11 +19,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from a .env file into os.environ
+load_dotenv()
+
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-cljaa6^_qsn#)))*44+87%t(*l52+alpvyn8o_@(#p8$3q+yhs'
+# Why hardcoding is dangerous: Hardcoded secrets committed to version control can be 
+# easily compromised if the repository is exposed or accessed by unauthorized users.
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise Exception("SECRET_KEY not set in environment variables")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
 
 ALLOWED_HOSTS = ['*']
 
@@ -160,5 +170,21 @@ CORS_ALLOW_ALL_ORIGINS = True  # For dev only. Update in PROD.
 AUTH_USER_MODEL = 'users.User'
 
 import os
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Email Configuration
+# Using environment variables to prevent hardcoded credentials.
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 587))
+EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "True").lower() == "true"
+
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+
+if not EMAIL_HOST_USER or not EMAIL_HOST_PASSWORD:
+    # We raise an error to ensure the application won't launch silently without required credentials,
+    # preventing email-related failures downstream.
+    raise Exception("Email credentials not set in environment variables")

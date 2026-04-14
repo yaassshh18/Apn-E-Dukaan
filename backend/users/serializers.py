@@ -18,17 +18,36 @@ class ReportSerializer(serializers.ModelSerializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    email = serializers.EmailField(required=True)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'role', 'location')
+        fields = ('email', 'password', 'role', 'location')
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("user with this email address already exists.")
+        return value
 
     def create(self, validated_data):
+        email = validated_data.get('email')
+        # Generate a username since the default AbstractUser still requires it in internal logic
+        import uuid
+        base_username = email.split('@')[0]
+        unique_username = f"{base_username}_{uuid.uuid4().hex[:6]}"
+        
         user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data.get('email', ''),
+            username=unique_username,
+            email=email,
             password=validated_data['password'],
             role=validated_data.get('role', 'BUYER'),
             location=validated_data.get('location', '')
         )
         return user
+
+class OTPRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+class OTPVerifySerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp_code = serializers.CharField(max_length=6)

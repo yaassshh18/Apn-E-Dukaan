@@ -41,3 +41,30 @@ class Report(models.Model):
 
     def __str__(self):
         return f"Report by {self.reporter.username}"
+
+class OTP(models.Model):
+    email = models.EmailField()
+    otp_code = models.CharField(max_length=128) # Hashed OTP code
+    created_at = models.DateTimeField(auto_now_add=True)
+    expiry_time = models.DateTimeField()
+    is_verified = models.BooleanField(default=False)
+    attempts = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"OTP for {self.email}"
+
+class LoginActivity(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='login_activities')
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    device = models.CharField(max_length=255, null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, default='SUCCESS') # e.g. SUCCESS, FAILED_OTP
+
+    class Meta:
+        ordering = ['-timestamp']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.status} at {self.timestamp}"
