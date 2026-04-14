@@ -9,8 +9,9 @@ from .serializers import (
     RegisterSerializer, UserSerializer, NotificationSerializer, ReportSerializer,
     OTPRequestSerializer, OTPVerifySerializer
 )
+from django.core.signing import TimestampSigner, BadSignature, SignatureExpired
 from .utils.otp import create_otp_for_email, verify_otp
-from .utils.email import send_registration_otp, send_welcome_email, send_login_otp, send_login_alert
+from .utils.email import send_registration_otp, send_welcome_email, send_login_otp, send_login_alert, send_password_reset_otp
 
 
 class RegisterView(generics.CreateAPIView):
@@ -96,11 +97,15 @@ class LoginWithOTPView(APIView):
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request):
+        username = request.data.get('username')
         email = request.data.get('email')
         password = request.data.get('password')
+
+        if not username or not email or not password:
+            return Response({'error': 'Username, email, and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            user = User.objects.get(email=email)
+            user = User.objects.get(email__iexact=email, username__iexact=username)
             if user.check_password(password):
                 if not user.is_verified:
                     return Response({'error': 'Please verify your account first.'}, status=status.HTTP_403_FORBIDDEN)
@@ -111,12 +116,13 @@ class LoginWithOTPView(APIView):
                 
                 return Response({
                     'message': 'Credentials verified. OTP sent to email.',
-                    'email': user.email
+                    'email': user.email,
+                    'username': user.username
                 }, status=status.HTTP_200_OK)
             else:
-                return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
+                return Response({'error': 'Invalid username, email, or password'}, status=status.HTTP_401_UNAUTHORIZED)
         except User.DoesNotExist:
-            return Response({'error': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'error': 'Invalid username, email, or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class RequestLoginOTPView(APIView):
@@ -219,3 +225,69 @@ class ResendOTPView(APIView):
                 return Response({'error': 'No account found with this email.'}, status=status.HTTP_404_NOT_FOUND)
                 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class RequestPasswordResetOTPView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = OTPRequestSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            try:
+                user = User.objects.get(email=email)
+                otp_code = create_otp_for_email(email)
+                send_password_reset_otp(email, otp_code)
+                return Response({'message': 'Password reset OTP sent to your email.'}, status=status.HTTP_200_OK)
+            except User.DoesNotExist:
+                return Response({'error': 'No account found with this email.'}, status=status.HTTP_404_NOT_FOUND)
+                
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class VerifyPasswordResetOTPView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        serializer = OTPVerifySerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            otp_code = serializer.validated_data['otp_code']
+            
+            is_valid, msg = verify_otp(email, otp_code)
+            if not is_valid:
+                return Response({'error': msg}, status=status.HTTP_400_BAD_REQUEST)
+                
+            # OTP verified successfully, generate a short-lived token to allow resetting password
+            signer = TimestampSigner()
+            token = signer.sign(email)
+            
+            return Response({'message': 'OTP verified successfully.', 'reset_token': token}, status=status.HTTP_200_OK)
+                
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ResetPasswordView(APIView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request):
+        token = request.data.get('reset_token')
+        new_password = request.data.get('new_password')
+        
+        if not token or not new_password:
+            return Response({'error': 'Reset token and new password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        signer = TimestampSigner()
+        try:
+            # Token is valid for 10 minutes max
+            email = signer.unsign(token, max_age=600)
+            user = User.objects.get(email=email)
+            
+            user.set_password(new_password)
+            # Email ownership is confirmed via reset OTP, so allow login after reset.
+            if not user.is_verified:
+                user.is_verified = True
+            user.save()
+            return Response({'message': 'Password updated successfully. You can now login with your new password.'}, status=status.HTTP_200_OK)
+            
+        except (BadSignature, SignatureExpired):
+            return Response({'error': 'Invalid or expired reset token. Please request a new OTP.'}, status=status.HTTP_400_BAD_REQUEST)
+        except User.DoesNotExist:
+            return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)

@@ -10,6 +10,7 @@ const Register = () => {
     
     // Core Registration State
     const [formData, setFormData] = useState({
+        username: '',
         email: '',
         password: '',
         location: '',
@@ -48,8 +49,10 @@ const Register = () => {
             setCountdown(60);
         } catch (error) {
             const errorData = error.response?.data;
-            if (errorData && errorData.email) {
-                toast.error(errorData.email[0]); // e.g. "user with this email address already exists."
+            if (errorData && errorData.username) {
+                toast.error(errorData.username[0]);
+            } else if (errorData && errorData.email) {
+                toast.error(errorData.email[0]);
             } else {
                 toast.error('Registration failed. Please try again.');
             }
@@ -183,6 +186,18 @@ const Register = () => {
                     
                     <form onSubmit={handleRegisterSubmit} className="space-y-5">
                         <div className="grid grid-cols-1 gap-5">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-700 mb-1">Username</label>
+                                <input
+                                    type="text"
+                                    className="input-field shadow-sm"
+                                    placeholder="Choose a username"
+                                    value={formData.username}
+                                    onChange={(e) => setFormData({...formData, username: e.target.value})}
+                                    required
+                                />
+                            </div>
+
                             <div>
                                 <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
                                 <input 

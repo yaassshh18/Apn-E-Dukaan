@@ -35,8 +35,8 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Step 1: Request 2FA OTP
-    const initiateLogin = async (email, password) => {
-        const res = await api.post('auth/login/', { email, password });
+    const initiateLogin = async (username, email, password) => {
+        const res = await api.post('auth/login/', { username, email, password });
         return res.data; // e.g. { message: "Credentials verified...", email: "..." }
     };
 

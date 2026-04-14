@@ -5,7 +5,8 @@ from rest_framework.routers import DefaultRouter
 
 from users.views import (
     RegisterView, ProfileView, NotificationViewSet, ReportViewSet,
-    VerifyRegistrationOTPView, RequestLoginOTPView, VerifyLoginOTPView, ResendOTPView, LoginWithOTPView
+    VerifyRegistrationOTPView, RequestLoginOTPView, VerifyLoginOTPView, ResendOTPView, LoginWithOTPView,
+    RequestPasswordResetOTPView, VerifyPasswordResetOTPView, ResetPasswordView
 )
 from products.views import CategoryViewSet, ProductViewSet, ReviewViewSet, WishlistViewSet
 from orders.views import CartViewSet, OrderViewSet
@@ -40,6 +41,11 @@ urlpatterns = [
     
     # Resend OTP
     path('api/auth/resend-otp/', ResendOTPView.as_view(), name='resend_otp'),
+    
+    # Password Reset
+    path('api/auth/password-reset/request/', RequestPasswordResetOTPView.as_view(), name='password_reset_request'),
+    path('api/auth/password-reset/verify/', VerifyPasswordResetOTPView.as_view(), name='password_reset_verify'),
+    path('api/auth/password-reset/reset/', ResetPasswordView.as_view(), name='password_reset_reset'),
     
     path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/auth/profile/', ProfileView.as_view(), name='profile'),

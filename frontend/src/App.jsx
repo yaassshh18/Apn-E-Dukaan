@@ -10,6 +10,7 @@ import BottomNav from './components/BottomNav';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ForgetPass from './pages/ForgetPass';
 import AdminDashboard from './pages/AdminDashboard';
 import BuyerDashboard from './pages/BuyerDashboard';
 import SellerDashboard from './pages/SellerDashboard';
@@ -36,6 +37,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
             <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
+            <Route path="/forgot-password" element={!user ? <ForgetPass /> : <Navigate to="/" />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={user ? <Cart /> : <Navigate to="/login" />} />
             <Route path="/wishlist" element={user ? <Wishlist /> : <Navigate to="/login" />} />

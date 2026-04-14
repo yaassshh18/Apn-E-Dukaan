@@ -6,6 +6,7 @@ import { Eye, EyeOff, ShoppingBag } from 'lucide-react';
 
 const Login = () => {
     const { initiateLogin, verifyLogin, resendOtp } = useContext(AuthContext);
+    const [loginUsername, setLoginUsername] = useState('');
     const [loginEmail, setLoginEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -30,7 +31,7 @@ const Login = () => {
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
         try {
-            const data = await initiateLogin(loginEmail, password);
+            const data = await initiateLogin(loginUsername, loginEmail, password);
             setUserEmail(data.email);
             setIs2FAStarted(true);
             setCountdown(60);
@@ -76,7 +77,7 @@ const Login = () => {
                         </div>
                         <h1 className="text-3xl md:text-4xl font-display font-medium text-white mb-4 tracking-tight leading-tight">Sign in to your workspace</h1>
                         <p className="text-gray-400 text-sm md:text-base leading-relaxed">
-                            Sign in with your email and password, followed by an email verification code.
+                            Sign in with your username, email, and password, followed by an email verification code.
                         </p>
                     </div>
                     
@@ -178,6 +179,18 @@ const Login = () => {
                     
                     <form onSubmit={handleLoginSubmit} className="space-y-6">
                         <div>
+                            <label className="block text-sm font-semibold text-gray-700 mb-2">Username</label>
+                            <input
+                                type="text"
+                                className="input-field shadow-sm hover:shadow-md"
+                                placeholder="Enter your username"
+                                value={loginUsername}
+                                onChange={(e) => setLoginUsername(e.target.value)}
+                                required
+                            />
+                        </div>
+
+                        <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                             <input 
                                 type="email" 
@@ -215,7 +228,7 @@ const Login = () => {
                                 <input type="checkbox" className="w-4 h-4 rounded text-primary focus:ring-primary border-gray-300 transition-all cursor-pointer"/>
                                 <span className="text-gray-600 group-hover:text-primary transition-colors">Remember me</span>
                             </label>
-                            <a href="#" className="font-semibold text-secondary hover:text-primary transition-colors hover:underline">Forgot Password?</a>
+                            <Link to="/forgot-password" className="font-semibold text-secondary hover:text-primary transition-colors hover:underline">Forgot Password?</Link>
                         </div>
 
                         <button type="submit" className="btn-primary w-full text-lg py-4 mt-2 shadow-glow hover:shadow-primary/50">

@@ -66,3 +66,10 @@ def send_login_alert(email, username, ip_address, device, time):
         'time': time
     }
     send_html_email(subject, 'emails/login_alert.html', context, [email])
+
+def send_password_reset_otp(email, otp_code):
+    subject = "Password Reset OTP - Apn-E-Dukaan"
+    context = {
+        'otp_code': otp_code,
+    }
+    send_html_email(subject, 'emails/password_reset_otp.html', context, [email])
