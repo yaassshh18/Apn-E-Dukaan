@@ -2,7 +2,7 @@ import { useState, useEffect, useContext, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
-import { Send, ArrowLeft, MoreVertical, Shield } from 'lucide-react';
+import { Send, ArrowLeft, MoreVertical, Shield, MessageSquare } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Chat = () => {
@@ -68,6 +68,16 @@ const Chat = () => {
         }
     };
 
+    const handleOfferAction = async (msgId, status) => {
+        try {
+            await api.patch(`chat/${msgId}/`, { offer_status: status });
+            fetchMessages();
+            toast.success(`Offer ${status}!`);
+        } catch (error) {
+            toast.error("Failed to update offer");
+        }
+    };
+
     // A simple grouping of messages to figure out unique conversations
     const getConversationsList = () => {
         const conversationsMap = new Map();
@@ -83,31 +93,34 @@ const Chat = () => {
     const conversations = getConversationsList();
 
     return (
-        <div className="container mx-auto px-0 md:px-6 py-6 max-w-6xl h-[calc(100vh-80px)]">
-            <div className="glass-card shadow-soft h-full flex overflow-hidden border-0 rounded-none md:rounded-2xl">
+        <div className="container mx-auto px-0 lg:px-6 pt-20 pb-0 max-w-7xl h-[calc(100vh-72px)] bg-background">
+            <div className="bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] h-full flex overflow-hidden border-0 lg:border border-gray-200 lg:rounded-3xl animate-fade-in relative z-20">
                 
                 {/* Sidebar - Contacts */}
-                <div className={`w-full md:w-1/3 border-r bg-white/50 flex-col ${receiverId ? 'hidden md:flex' : 'flex'}`}>
-                    <div className="p-4 border-b bg-gray-50 flex items-center justify-between">
-                        <h2 className="text-xl font-bold text-gray-800">Messages</h2>
-                        <MoreVertical className="text-gray-500 w-5 h-5 cursor-pointer"/>
+                <div className={`w-full md:w-[350px] lg:w-[400px] border-r border-gray-100 flex-col ${receiverId ? 'hidden md:flex' : 'flex'}`}>
+                    <div className="h-[72px] px-6 border-b border-gray-100 bg-gray-50/80 backdrop-blur flex items-center justify-between shrink-0">
+                        <h2 className="text-2xl font-display font-extrabold text-gray-900">Messages 💬</h2>
                     </div>
-                    <div className="flex-grow overflow-y-auto">
+                    <div className="flex-grow overflow-y-auto custom-scrollbar">
                         {conversations.length === 0 ? (
-                            <div className="p-6 text-center text-gray-500">No active conversations. Open a product and start chatting!</div>
+                            <div className="p-8 text-center flex flex-col items-center justify-center h-full text-gray-400">
+                                <MessageSquare className="w-12 h-12 mb-4 opacity-30" />
+                                <p className="font-medium">No active chats.</p>
+                                <p className="text-sm mt-1">Start connecting with local sellers!</p>
+                            </div>
                         ) : (
                             conversations.map(contact => (
                                 <div 
                                     key={contact.id} 
                                     onClick={() => setReceiverId(contact.id)}
-                                    className={`p-4 border-b cursor-pointer hover:bg-gray-100 flex items-center gap-4 transition-colors ${receiverId === contact.id ? 'bg-primary/5 border-l-4 border-l-primary' : ''}`}
+                                    className={`p-4 mx-3 mt-3 rounded-2xl cursor-pointer flex items-center gap-4 transition-all ${receiverId === contact.id ? 'bg-primary text-white shadow-glow' : 'bg-white hover:bg-gray-50 border border-transparent hover:border-gray-100'}`}
                                 >
-                                    <div className="w-12 h-12 bg-secondary/20 rounded-full flex items-center justify-center text-secondary font-bold text-lg shrink-0">
+                                    <div className={`w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl shrink-0 shadow-inner ${receiverId === contact.id ? 'bg-white/20 text-white' : 'bg-gradient-to-tr from-gray-100 to-gray-200 text-gray-600'}`}>
                                         {contact.username?.[0]?.toUpperCase()}
                                     </div>
                                     <div className="flex-grow min-w-0">
-                                        <h3 className="font-bold text-gray-800 truncate">{contact.username}</h3>
-                                        <p className="text-sm text-gray-500 truncate">Tap to view chat</p>
+                                        <h3 className={`font-bold truncate text-lg ${receiverId === contact.id ? 'text-white' : 'text-gray-900'}`}>{contact.username}</h3>
+                                        <p className={`text-sm truncate font-medium ${receiverId === contact.id ? 'text-white/70' : 'text-primary'}`}>Active Conversation</p>
                                     </div>
                                 </div>
                             ))
@@ -116,105 +129,120 @@ const Chat = () => {
                 </div>
 
                 {/* Main Chat Area */}
-                <div className={`w-full md:w-2/3 flex-col bg-[#e5ddd5]/30 ${!receiverId ? 'hidden md:flex' : 'flex'}`}>
+                <div className={`flex-grow flex-col relative w-full ${!receiverId ? 'hidden md:flex' : 'flex'}`}>
+                    {/* Background Pattern */}
+                    <div className="absolute inset-0 bg-[#EFEAE2] z-0 opacity-40 mix-blend-multiply pointer-events-none" style={{backgroundImage: "url('https://www.transparenttextures.com/patterns/cubes.png')"}}></div>
+
                     {receiverId ? (
-                        <>
+                        <div className="flex flex-col h-full z-10">
                             {/* Chat Header */}
-                            <div className="p-4 bg-gray-50 border-b flex items-center gap-4 sticky top-0 z-10 shadow-sm">
-                                <button onClick={() => setReceiverId(null)} className="md:hidden text-gray-600 hover:text-primary">
+                            <div className="h-[72px] px-6 bg-white border-b border-gray-100 flex items-center gap-4 shrink-0 shadow-sm">
+                                <button onClick={() => setReceiverId(null)} className="md:hidden text-gray-400 hover:text-primary transition-colors hover:bg-gray-50 p-2 rounded-full">
                                     <ArrowLeft className="w-6 h-6"/>
                                 </button>
-                                <div className="w-10 h-10 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-lg shrink-0">
+                                <div className="w-12 h-12 bg-gradient-to-tr from-secondary to-primary rounded-full flex items-center justify-center text-white font-bold text-xl shrink-0 shadow-sm">
                                     {conversations.find(c => c.id === receiverId)?.username?.[0]?.toUpperCase() || 'U'}
                                 </div>
                                 <div className="flex-grow">
-                                    <h3 className="font-bold text-gray-800">{conversations.find(c => c.id === receiverId)?.username || 'User'}</h3>
+                                    <h3 className="font-display font-bold text-xl text-gray-900">{conversations.find(c => c.id === receiverId)?.username || 'User'}</h3>
                                 </div>
-                                <Shield className="text-accent w-5 h-5"/>
+                                <Shield className="text-accent w-6 h-6 opacity-80"/>
                             </div>
 
                             {/* Messages Container */}
-                            <div className="flex-grow overflow-y-auto p-4 space-y-4">
-                                <div className="text-center my-4">
-                                    <span className="bg-[#E1F3FB] text-[#4A5D6A] text-xs font-semibold px-4 py-1.5 rounded-lg shadow-sm inline-block">
-                                        Messages are end-to-end encrypted locally. No one outside of this chat can read them.
+                            <div className="flex-grow overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                                <div className="text-center my-6">
+                                    <span className="bg-[#FEFCE8] border border-yellow-200 text-yellow-800 text-xs font-bold px-4 py-2 rounded-lg shadow-sm inline-block tracking-wide">
+                                        🔒 Messages are end-to-end encrypted locally.
                                     </span>
                                 </div>
 
                                 {messages.filter(m => m.sender.id === receiverId || m.receiver.id === receiverId).map(msg => (
                                     <div key={msg.id} className={`flex ${msg.sender.id === user.id ? 'justify-end' : 'justify-start'}`}>
-                                        <div className={`max-w-[75%] rounded-xl px-4 py-2 shadow-sm relative ${msg.sender.id === user.id ? 'bg-[#dcf8c6] rounded-tr-none' : 'bg-white rounded-tl-none'}`}>
+                                        <div className={`max-w-[85%] lg:max-w-[70%] rounded-2xl px-5 py-3 shadow-[0_2px_4px_rgba(0,0,0,0.06)] relative ${msg.sender.id === user.id ? 'bg-[#D9FDD3] rounded-tr-sm text-gray-900' : 'bg-white rounded-tl-sm text-gray-900 border border-gray-100'}`}>
                                             {msg.product && (
-                                                <div className="bg-white/50 p-2 rounded mb-2 flex items-center gap-2 cursor-pointer border border-gray-200" onClick={() => navigate(`/product/${msg.product.id}`)}>
-                                                    {msg.product.image ? <img src={msg.product.image} className="w-10 h-10 object-cover rounded" /> : <div className="w-10 h-10 bg-gray-200 rounded"/>}
+                                                <div className="bg-white p-2 rounded-xl mb-3 flex items-center gap-3 cursor-pointer shadow-sm hover:shadow" onClick={() => navigate(`/product/${msg.product.id}`)}>
+                                                    {msg.product.image ? <img src={msg.product.image} className="w-12 h-12 object-cover rounded-lg" /> : <div className="w-12 h-12 bg-gray-100 rounded-lg"/>}
                                                     <div className="flex-grow min-w-0">
-                                                        <p className="text-xs font-bold text-gray-700 truncate">{msg.product.title}</p>
-                                                        <p className="text-xs text-primary font-bold">₹{msg.product.price}</p>
+                                                        <p className="text-sm font-bold text-gray-900 truncate">{msg.product.title}</p>
+                                                        <p className="text-sm text-primary font-black">₹{msg.product.price}</p>
                                                     </div>
                                                 </div>
                                             )}
                                             
                                             {msg.is_offer ? (
-                                                <div className="border border-warning bg-warning/10 p-3 rounded-lg mb-2">
-                                                    <p className="font-bold text-warning mb-1">New Offer: ₹{msg.offer_amount}</p>
-                                                    <span className="text-xs font-bold bg-white px-2 py-1 rounded text-gray-600 border shadow-sm">{msg.offer_status || 'PENDING'}</span>
+                                                <div className={`border-2 p-4 rounded-xl mb-3 ${msg.offer_status === 'ACCEPTED' ? 'border-green-400 bg-green-50' : msg.offer_status === 'REJECTED' ? 'border-gray-200 bg-gray-50' : 'border-indigo-200 bg-indigo-50 shadow-inner'}`}>
+                                                    <p className={`font-black text-xl mb-2 ${msg.offer_status === 'ACCEPTED' ? 'text-green-600' : msg.offer_status === 'REJECTED' ? 'text-gray-400 line-through' : 'text-indigo-600'}`}>
+                                                        {msg.offer_status === 'ACCEPTED' ? 'Deal: ' : 'Offer: '}₹{msg.offer_amount}
+                                                    </p>
+                                                    <div className="flex items-center gap-2 mt-2">
+                                                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border ${msg.offer_status === 'ACCEPTED' ? 'bg-green-100 text-green-700 border-green-200' : msg.offer_status === 'REJECTED' ? 'bg-white text-gray-400 border-gray-200' : 'bg-white text-indigo-500 border-indigo-200'}`}>{msg.offer_status || 'PENDING OP'}</span>
+                                                        {msg.receiver.id === user.id && (!msg.offer_status || msg.offer_status === 'PENDING') && (
+                                                            <div className="flex gap-2 ml-auto">
+                                                                <button onClick={() => handleOfferAction(msg.id, 'ACCEPTED')} className="bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-bold text-sm px-4 py-1.5 rounded-lg shadow-sm transition-colors">Accept</button>
+                                                                <button onClick={() => handleOfferAction(msg.id, 'REJECTED')} className="bg-gray-200 hover:bg-gray-300 active:bg-gray-400 text-gray-600 font-bold text-sm px-4 py-1.5 rounded-lg shadow-sm transition-colors">Decline</button>
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             ) : null}
 
-                                            <p className="text-gray-800 text-sm whitespace-pre-wrap break-words">{msg.content}</p>
-                                            <span className="text-[10px] text-gray-400 mt-1 block text-right">
-                                                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
+                                            <p className="text-base whitespace-pre-wrap break-words font-medium leading-relaxed">{msg.content}</p>
+                                            <div className="flex items-center justify-end gap-1 mt-1">
+                                                <span className="text-[10px] text-gray-500/80 font-bold">
+                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
-                                <div ref={messagesEndRef} />
+                                <div ref={messagesEndRef} className="h-4"/>
                             </div>
 
                             {/* Message Input */}
-                            <div className="p-4 bg-gray-50 border-t">
+                            <div className="p-4 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.02)]">
                                 {isOffer && (
-                                    <div className="mb-2 flex items-center gap-2 bg-warning/10 p-2 rounded-lg border border-warning/30 transition-all">
-                                        <span className="text-warning font-bold text-sm shrink-0">Offer Amount (₹):</span>
+                                    <div className="mb-3 flex items-center gap-3 bg-indigo-50 p-3 rounded-xl border border-indigo-100 animate-slide-up">
+                                        <span className="text-secondary font-black text-sm shrink-0">Offer Amount (₹):</span>
                                         <input 
                                             type="number" 
-                                            className="bg-white border w-24 p-1 rounded text-sm focus:outline-none" 
+                                            className="bg-white border-none shadow-sm w-32 p-2 rounded-lg text-lg font-bold focus:ring-2 focus:ring-secondary/20 outline-none transition-all" 
                                             value={offerAmount} 
+                                            placeholder="e.g. 1500"
                                             onChange={(e) => setOfferAmount(e.target.value)}
                                         />
-                                        <button type="button" onClick={() => setIsOffer(false)} className="text-sm text-gray-500 hover:text-gray-800 ml-auto underline">Cancel</button>
+                                        <button type="button" onClick={() => setIsOffer(false)} className="text-sm font-bold text-gray-400 hover:text-gray-600 ml-auto bg-white px-3 py-1.5 rounded-lg border">Cancel</button>
                                     </div>
                                 )}
                                 
-                                <form onSubmit={handleSendMessage} className="flex gap-2">
+                                <form onSubmit={handleSendMessage} className="flex gap-3 items-end">
                                     <button 
                                         type="button" 
-                                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-colors shrink-0 ${isOffer ? 'bg-warning text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+                                        className={`px-5 py-3 h-12 rounded-2xl text-sm font-black transition-all shrink-0 ${isOffer ? 'bg-secondary text-white shadow-glow' : 'bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900 border border-transparent hover:border-gray-300'}`}
                                         onClick={() => setIsOffer(!isOffer)}
                                     >
                                         ₹ Make Offer
                                     </button>
                                     <input 
                                         type="text" 
-                                        placeholder="Type a message..." 
-                                        className="flex-grow input-field bg-white"
+                                        placeholder="Type your message..." 
+                                        className="flex-grow input-field bg-gray-50 h-12 shadow-inner border-gray-200 text-base"
                                         value={inputText}
                                         onChange={(e) => setInputText(e.target.value)}
                                     />
-                                    <button type="submit" className="bg-[#00a884] text-white p-3 rounded-xl hover:bg-[#008f6f] transition-colors shrink-0 shadow-sm" disabled={!inputText.trim() && !isOffer}>
+                                    <button type="submit" className="bg-primary text-white p-3 h-12 w-12 flex items-center justify-center rounded-2xl hover:bg-secondary transition-colors shrink-0 shadow-glow disabled:opacity-50 disabled:shadow-none" disabled={!inputText.trim() && !isOffer}>
                                         <Send className="w-5 h-5"/>
                                     </button>
                                 </form>
                             </div>
-                        </>
+                        </div>
                     ) : (
-                        <div className="flex-grow flex flex-col items-center justify-center text-gray-500 bg-[#f0f2f5]">
-                            <div className="w-48 h-48 bg-white rounded-full flex items-center justify-center shadow-soft mb-6">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/1200px-WhatsApp.svg.png" alt="WhatsApp Style Chat" className="w-24 h-24 opacity-20 grayscale" />
+                        <div className="flex-grow flex flex-col items-center justify-center z-10">
+                            <div className="w-48 h-48 bg-white/60 pointer-events-none rounded-full flex items-center justify-center shadow-glass mb-8 border border-white">
+                                <MessageSquare className="w-20 h-20 text-gray-300 drop-shadow-sm" />
                             </div>
-                            <h2 className="text-2xl font-light text-gray-600 mb-2">Apn-E-Dukaan Web Chat</h2>
-                            <p className="text-center max-w-md text-sm">Select a conversation to start messaging, negotiating, and locking in the best hyperlocal deals seamlessly.</p>
-                            <p className="mt-8 text-xs flex items-center gap-1 text-gray-400"><Shield className="w-3 h-3"/> End-to-end encrypted simulation</p>
+                            <h2 className="text-3xl font-display font-black text-gray-800 mb-2">Apn-E-Dukaan Web Chat</h2>
+                            <p className="text-center max-w-sm text-gray-500 font-medium leading-relaxed">Select a conversation to start messaging, negotiating, and locking in the best hyperlocal deals seamlessly.</p>
                         </div>
                     )}
                 </div>

@@ -10,6 +10,7 @@ class CartViewSet(viewsets.ViewSet):
 
     def list(self, request):
         cart, _ = Cart.objects.get_or_create(user=request.user)
+        cart = Cart.objects.prefetch_related('items__product__seller', 'items__product__category').get(id=cart.id)
         serializer = CartSerializer(cart)
         return Response(serializer.data)
 
@@ -17,12 +18,21 @@ class CartViewSet(viewsets.ViewSet):
     def add_item(self, request):
         cart, _ = Cart.objects.get_or_create(user=request.user)
         product_id = request.data.get('product_id')
-        quantity = int(request.data.get('quantity', 1))
         
+        try:
+            quantity = int(request.data.get('quantity', 1))
+            if quantity <= 0:
+                return Response({"error": "Quantity must be greater than zero"}, status=status.HTTP_400_BAD_REQUEST)
+        except (ValueError, TypeError):
+            return Response({"error": "Invalid quantity"}, status=status.HTTP_400_BAD_REQUEST)
+            
         try:
             product = Product.objects.get(id=product_id)
         except Product.DoesNotExist:
             return Response({"error": "Product not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        if quantity > product.stock:
+            return Response({"error": f"Only {product.stock} items left in stock"}, status=status.HTTP_400_BAD_REQUEST)
             
         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
         if not created:
@@ -31,6 +41,7 @@ class CartViewSet(viewsets.ViewSet):
             cart_item.quantity = quantity
         cart_item.save()
         
+        cart = Cart.objects.prefetch_related('items__product__seller', 'items__product__category').get(id=cart.id)
         return Response(CartSerializer(cart).data)
         
     @action(detail=False, methods=['delete'])
@@ -46,11 +57,13 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        queryset = Order.objects.select_related('buyer').prefetch_related('items__product__seller', 'items__product__category')
+        
         if getattr(user, 'role', '') == 'ADMIN' or user.is_staff:
-            return Order.objects.all().order_by('-created_at')
-        if user.role == 'SELLER':
-            return Order.objects.filter(items__product__seller=user).distinct().order_by('-created_at')
-        return Order.objects.filter(buyer=user).order_by('-created_at')
+            return queryset.order_by('-created_at')
+        if getattr(user, 'role', '') == 'SELLER':
+            return queryset.filter(items__product__seller=user).distinct().order_by('-created_at')
+        return queryset.filter(buyer=user).order_by('-created_at')
 
     def create(self, request, *args, **kwargs):
         cart = Cart.objects.get(user=request.user)
@@ -61,13 +74,24 @@ class OrderViewSet(viewsets.ModelViewSet):
         order = Order.objects.create(buyer=request.user, total_price=total_price)
         
         for item in cart.items.all():
+            if item.quantity > item.product.stock:
+                order.delete() # rollback
+                return Response({"error": f"{item.product.title} is out of stock!"}, status=status.HTTP_400_BAD_REQUEST)
+                
             OrderItem.objects.create(
                 order=order,
                 product=item.product,
                 quantity=item.quantity,
                 price=item.product.price
             )
+            # Deduct stock
+            item.product.stock -= item.quantity
+            item.product.purchases_count += item.quantity
+            item.product.save()
             
         cart.items.all().delete()
+        
+        # Refetch order to ensure nested serialization works reliably
+        order = Order.objects.select_related('buyer').prefetch_related('items__product__seller', 'items__product__category').get(id=order.id)
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)

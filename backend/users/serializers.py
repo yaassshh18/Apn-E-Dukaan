@@ -1,10 +1,20 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Notification, Report
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email', 'role', 'phone_number', 'location', 'profile_picture')
+        fields = ('id', 'username', 'email', 'role', 'phone_number', 'location', 'latitude', 'longitude', 'is_verified', 'profile_picture')
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
+
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = '__all__'
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)

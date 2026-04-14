@@ -27,6 +27,8 @@ class Order(models.Model):
     buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     total_price = models.DecimalField(max_digits=12, decimal_places=2)
+    payment_method = models.CharField(max_length=20, choices=[('COD', 'Cash on Delivery'), ('ONLINE', 'Online Payment')], default='COD')
+    payment_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

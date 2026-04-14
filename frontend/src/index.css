@@ -1,26 +1,53 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@config "../tailwind.config.js";
 
 @layer base {
   body {
-    @apply bg-background text-gray-800 antialiased font-sans;
+    @apply bg-background text-gray-800 antialiased font-sans selection:bg-secondary/30 selection:text-primary min-h-screen;
+    background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,0.02) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.02) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.02) 0, transparent 50%);
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight text-gray-900;
   }
 }
 
 @layer utilities {
   .glass-card {
-    @apply bg-white/70 backdrop-blur-md shadow-glass rounded-xl border border-white/40;
+    @apply bg-white/60 backdrop-blur-xl shadow-glass border border-white p-6 rounded-2xl transition-all duration-300;
   }
+  .glass-card:hover {
+    @apply shadow-hover;
+  }
+  
   .btn-primary {
-    @apply bg-gradient-to-r from-primary to-secondary text-white font-medium py-2 px-4 rounded-xl hover:shadow-lg transform transition-all active:scale-95;
+    @apply bg-gradient-to-r from-primary to-secondary text-white font-medium py-3 px-6 rounded-xl hover:shadow-glow hover:-translate-y-0.5 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
   }
+  
   .btn-secondary {
-    @apply bg-white text-primary border border-primary/20 font-medium py-2 px-4 rounded-xl hover:shadow-soft hover:bg-gray-50 transition-all active:scale-95;
+    @apply bg-white text-gray-700 font-medium py-3 px-6 rounded-xl shadow-soft hover:shadow-md hover:bg-gray-50 border border-gray-100 transition-all active:scale-[0.98];
   }
+  
   .input-field {
-    @apply w-full border border-gray-200 rounded-xl px-4 py-2 focus:ring-2 focus:ring-secondary/50 focus:border-secondary outline-none transition-all;
+    @apply w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:ring-4 focus:ring-secondary/10 focus:border-secondary outline-none transition-all duration-300;
   }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary;
+  }
+}
+
+/* Base custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full hover:bg-gray-400;
 }
 
 @keyframes fadeInDown {
